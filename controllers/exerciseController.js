@@ -16,16 +16,14 @@ const createUser = async function (req, res) {
     return res.status(500).json({ error: `User not created !` });
   }
 
-  return res
-    .status(201)
-    .json({ success: true, msg: `User created successfully !` });
+  return res.status(201).json({ username: userDoc.username, _id: userDoc.id });
 };
 
 const getAllUsers = async function (req, res) {
   try {
     const users = await UserModel.find();
 
-    return res.status(200).json({ users });
+    return res.status(200).json(users);
   } catch (error) {
     return res.status(500).json({ success: false, msg: error });
   }
@@ -37,6 +35,7 @@ const createExercise = async function (req, res) {
   const { description, duration, date } = req.body;
 
   let exerciseDoc;
+  let user;
 
   try {
     // Format date as yyyy-mm-dd for response
@@ -65,13 +64,16 @@ const createExercise = async function (req, res) {
       user: userId,
       description: description,
       duration: duration,
-      date: exerciseDate,
+      date: exerciseDate.toISOString(),
     });
 
     if (exerciseDoc) {
       return res.status(201).json({
-        success: true,
-        exercise: exerciseDoc,
+        username: user.username,
+        _id: user.id,
+        duration: exerciseDoc.duration,
+        description: exerciseDoc.description,
+        date: new Date(exerciseDoc.date).toDateString(),
       });
     }
   } catch (error) {
