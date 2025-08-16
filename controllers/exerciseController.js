@@ -21,6 +21,16 @@ const createUser = async function (req, res) {
     .json({ success: true, msg: `User created successfully !` });
 };
 
+const getAllUsers = async function (req, res) {
+  try {
+    const users = await UserModel.find();
+
+    return res.status(200).json({ users });
+  } catch (error) {
+    return res.status(500).json({ success: false, msg: error });
+  }
+};
+
 const createExercise = async function (req, res) {
   const { id: userId } = req.params;
 
@@ -69,4 +79,58 @@ const createExercise = async function (req, res) {
   }
 };
 
-module.exports = { createUser, createExercise };
+const getExercise = async function (req, res) {
+  const { id } = req.params;
+
+  const { from, to, limit } = req.query;
+
+  let userDoc;
+  let userName;
+
+  try {
+    userDoc = await UserModel.findById(id);
+
+    if (!userDoc) {
+      return res
+        .status(404)
+        .json({ status: false, msg: `User ${id} not found !` });
+    }
+
+    if (userDoc) {
+      userName = userDoc.username;
+    }
+  } catch (error) {
+    return res.status(500).json({ status: false, msg: `${error}` });
+  }
+
+  if (userDoc) {
+    try {
+      let dateFilter = {};
+      if (from) dateFilter.$gte = new Date(from);
+      if (to) dateFilter.$lte = new Date(to);
+
+      let query = { user: id };
+      if (from || to) query.date = dateFilter;
+      const exerciseDoc = await ExerciseModel.find(query).limit(
+        Number(limit) || 0
+      );
+
+      if (exerciseDoc) {
+        return res.status(200).json({
+          username: userName,
+          count: exerciseDoc.length,
+          _id: exerciseDoc.id,
+          log: exerciseDoc.map((ex) => ({
+            description: ex.description,
+            duration: ex.duration,
+            date: ex.date.toDateString(),
+          })),
+        });
+      }
+    } catch (error) {}
+  }
+
+  return res.status(200).json({});
+};
+
+module.exports = { createUser, createExercise, getExercise, getAllUsers };
